@@ -3,7 +3,12 @@
  */
 import CodeMirror from 'react-codemirror';
 import he from 'he';
+require( 'codemirror/mode/css/css' );
+require( 'codemirror/mode/diff/diff' );
 require( 'codemirror/mode/javascript/javascript' );
+require( 'codemirror/mode/markdown/markdown' );
+require( 'codemirror/mode/pegjs/pegjs' );
+require( 'codemirror/mode/php/php' );
 require( 'codemirror/lib/codemirror.css' );
 
 /**
@@ -27,18 +32,31 @@ registerBlockType( 'core/code-mirror', {
 
 	edit( { attributes, setAttributes } ) {
 		return (
-			<CodeMirror
-				value={ toEditor( attributes.html ) }
-				mode="javascript"
-				onChange={ value => setAttributes( { html: fromEditor( value ) } ) }
-				options={ {
-					lineNumbers: true,
-				} }
-			/>
+			<div>
+				<select onBlur={ ( { target: { value } } ) => setAttributes( { language: value } ) }>
+					{ [ 'css', 'diff', 'javascript', 'markdown', 'pegjs', 'php' ].map( language => (
+						<option
+							key={ language }
+							selected={ language === attributes.language }
+							value={ language }
+						>
+							{ language }
+						</option>
+					) ) }
+				</select>
+				<CodeMirror
+					value={ toEditor( attributes.html ) }
+					onChange={ value => setAttributes( { html: fromEditor( value ) } ) }
+					options={ {
+						lineNumbers: true,
+						mode: attributes.language,
+					} }
+				/>
+			</div>
 		);
 	},
 
 	save( { attributes } ) {
 		return attributes.html;
-	}
+	},
 } );

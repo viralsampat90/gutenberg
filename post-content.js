@@ -179,7 +179,7 @@ window._wpGutenbergPost = {
 			'https://make.wordpress.org/core/2017/01/17/editor-technical-overview/',
 			'<!-- /wp:core/embed -->',
 
-			'<!-- wp:core/code-mirror -->',
+			'<!-- wp:core/code-mirror language="php" -->',
 			'const add = ( a, b ) =&gt; a + b;<br>const sum = l =&gt; l.reduce( add, 0 );<br>',
 			'<!-- /wp:core/code-mirror -->',
 
