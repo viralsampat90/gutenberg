@@ -12,6 +12,7 @@ import './table';
 import './table2';
 import './preformatted';
 import './code';
+import './code-mirror';
 import './html';
 import './freeform';
 import './latest-posts';
