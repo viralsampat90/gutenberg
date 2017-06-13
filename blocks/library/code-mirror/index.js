@@ -29,13 +29,12 @@ registerBlockType( 'core/code-mirror', {
 	edit( { attributes, setAttributes } ) {
 		return (
 			<div>
-				<select onBlur={ ( { target: { value } } ) => setAttributes( { language: value } ) }>
+				<select
+					onChange={ ( { target: { value } } ) => setAttributes( { language: value } ) }
+					value={ attributes.language }
+				>
 					{ [ 'css', 'diff', 'elm', 'javascript', 'markdown', 'pegjs', 'php' ].map( language => (
-						<option
-							key={ language }
-							selected={ language === attributes.language }
-							value={ language }
-						>
+						<option key={ language } value={ language }>
 							{ language }
 						</option>
 					) ) }
