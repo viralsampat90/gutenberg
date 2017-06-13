@@ -42,7 +42,7 @@ registerBlockType( 'core/code-mirror', {
 				{ focus && (
 					<InspectorControls>
 						<label className="blocks-text-control__label" htmlFor="blocks-codemirror-language-select">{ __( 'Language' ) }</label>
-						<select
+						<select // eslint-disable-line jsx-a11y/no-onchange
 							id="blocks-codemirror-language-select"
 							onChange={ ( { target: { value } } ) => setAttributes( { language: value } ) }
 							value={ attributes.language }
