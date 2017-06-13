@@ -184,7 +184,7 @@ window._wpGutenbergPost = {
 			'parse : String -&gt; Result String (List Block)\n',
 			'parse s = runParser blockParser s\n',
 			'\n',
-			'type alias BlockOpener = BlockOpener String (List (String, String))\n',
+			'type BlockOpener = BlockOpener String (List (String, String))\n',
 			'\n',
 			'blockOpener : Parser BlockOpener\n',
 			'blockOpener =\n',

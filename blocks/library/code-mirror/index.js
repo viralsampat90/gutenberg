@@ -14,6 +14,8 @@ require( 'codemirror/lib/codemirror.css' );
 /**
  * Internal dependencies
  */
+import { __ } from 'i18n';
+import InspectorControls from '../../inspector-controls';
 import { registerBlockType, query } from '../../api';
 const { prop } = query;
 
@@ -26,19 +28,9 @@ registerBlockType( 'core/code-mirror', {
 		content: prop( 'code', 'textContent' ),
 	},
 
-	edit( { attributes, setAttributes } ) {
+	edit( { attributes, focus, setAttributes } ) {
 		return (
 			<div>
-				<select
-					onChange={ ( { target: { value } } ) => setAttributes( { language: value } ) }
-					value={ attributes.language }
-				>
-					{ [ 'css', 'diff', 'elm', 'javascript', 'markdown', 'pegjs', 'php' ].map( language => (
-						<option key={ language } value={ language }>
-							{ language }
-						</option>
-					) ) }
-				</select>
 				<CodeMirror
 					value={ attributes.content }
 					onChange={ value => setAttributes( { content: value } ) }
@@ -47,6 +39,22 @@ registerBlockType( 'core/code-mirror', {
 						mode: attributes.language,
 					} }
 				/>
+				{ focus && (
+					<InspectorControls>
+						<label className="blocks-text-control__label" htmlFor="blocks-codemirror-language-select">{ __( 'Language' ) }</label>
+						<select
+							id="blocks-codemirror-language-select"
+							onChange={ ( { target: { value } } ) => setAttributes( { language: value } ) }
+							value={ attributes.language }
+						>
+							{ [ 'css', 'diff', 'elm', 'javascript', 'markdown', 'pegjs', 'php' ].map( language => (
+								<option key={ language } value={ language }>
+									{ language }
+								</option>
+							) ) }
+						</select>
+					</InspectorControls>
+				) }
 			</div>
 		);
 	},
