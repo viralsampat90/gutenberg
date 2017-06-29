@@ -2,7 +2,7 @@
  * WordPress dependencies
  */
 import { __ } from 'i18n';
-import { Toolbar, Placeholder } from 'components';
+import { Toolbar, Placeholder, Dashicon } from 'components';
 import { pick } from 'lodash';
 
 /**
@@ -21,41 +21,11 @@ import GalleryImage from './gallery-image';
 
 const MAX_COLUMNS = 8;
 
-const editMediaLibrary = ( attributes, setAttributes ) => {
-	const frameConfig = {
-		frame: 'post',
-		title: __( 'Update Gallery media' ),
-		button: {
-			text: __( 'Select' ),
-		},
-		multiple: true,
-		state: 'gallery-edit',
-		selection: new wp.media.model.Selection( attributes.images, { multiple: true } ),
-	};
-
-	const editFrame = wp.media( frameConfig );
-	function updateFn() {
-		setAttributes( {
-			images: this.frame.state().attributes.library.models.map( ( a ) => {
-				return a.attributes;
-			} ),
-		} );
-	}
-
-	editFrame.on( 'insert', updateFn );
-	editFrame.state( 'gallery-edit' ).on( 'update', updateFn );
-	editFrame.open( 'gutenberg-gallery' );
-};
-
 // the media library image object contains numerous attributes
 // we only need this set to display the image in the library
 const slimImageObjects = ( imgs ) => {
-	const attrSet = [ 'sizes', 'mime', 'type', 'subtype', 'id', 'url', 'alt' ];
-	const newImgs = [];
-	imgs.forEach( ( img ) => {
-		newImgs.push( pick( img, attrSet ) );
-	} );
-	return newImgs;
+	const attrSet = [ 'id', 'url', 'alt' ];
+	return imgs.map( ( img ) => pick( img, attrSet ) );
 };
 
 function defaultColumnsNumber( attributes ) {
@@ -81,6 +51,7 @@ registerBlockType( 'core/gallery', {
 		const updateAlignment = ( nextAlign ) => setAttributes( { align: nextAlign } );
 		const { imageCrop = true } = attributes;
 		const toggleImageCrop = () => setAttributes( { imageCrop: ! imageCrop } );
+		const setMediaUrl = ( imgs ) => setAttributes( { images: slimImageObjects( imgs ) } );
 
 		const controls = (
 			focus && (
@@ -91,18 +62,25 @@ registerBlockType( 'core/gallery', {
 						controls={ [ 'left', 'center', 'right', 'wide', 'full' ] }
 					/>
 					{ !! images.length && (
-						<Toolbar controls={ [ {
-							icon: 'edit',
-							title: __( 'Edit Gallery' ),
-							onClick: () => editMediaLibrary( attributes, setAttributes ),
-						} ] } />
+						<Toolbar>
+							<li>
+								<MediaUploadButton
+									buttonProps={ { className: 'components-icon-button components-toolbar__control' } }
+									onSelect={ setMediaUrl }
+									type="image"
+									value={ images.map( ( img ) => img.id ) }
+									multiple
+								>
+									<Dashicon icon="edit" />
+								</MediaUploadButton>
+							</li>
+						</Toolbar>
 					) }
 				</BlockControls>
 			)
 		);
 
 		if ( images.length === 0 ) {
-			const setMediaUrl = ( imgs ) => setAttributes( { images: slimImageObjects( imgs ) } );
 			const uploadButtonProps = { isLarge: true };
 
 			return [
@@ -118,7 +96,7 @@ registerBlockType( 'core/gallery', {
 						onSelect={ setMediaUrl }
 						type="image"
 						autoOpen
-						multiple="true"
+						multiple
 					>
 						{ __( 'Insert from Media Library' ) }
 					</MediaUploadButton>
