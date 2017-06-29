@@ -19,6 +19,8 @@ import { getCategories, getBlockTypes } from 'blocks';
 import './style.scss';
 import { showInsertionPoint, hideInsertionPoint } from '../actions';
 
+const debouncedSpeak = debounce( wp.a11y.speak, 500 );
+
 class InserterMenu extends Component {
 	constructor() {
 		super( ...arguments );
@@ -33,7 +35,6 @@ class InserterMenu extends Component {
 		this.onKeyDown = this.onKeyDown.bind( this );
 		this.getVisibleBlocks = this.getVisibleBlocks.bind( this );
 		this.sortBlocksByCategory = this.sortBlocksByCategory.bind( this );
-		this.debouncedSpeak = debounce( this.speakAssertive.bind( this ), 500 );
 	}
 
 	componentDidMount() {
@@ -42,19 +43,20 @@ class InserterMenu extends Component {
 
 	componentWillUnmount() {
 		document.removeEventListener( 'keydown', this.onKeyDown );
+		debouncedSpeak.cancel();
 	}
 
 	componentDidUpdate() {
 		const visibleBlocks = this.getVisibleBlocks( getBlockTypes() );
 		// Announce the blocks search results to screen readers.
 		if ( !! visibleBlocks.length ) {
-			this.debouncedSpeak( sprintf( _n(
+			debouncedSpeak( sprintf( _n(
 				'%d result found',
 				'%d results found',
 				visibleBlocks.length
-			), visibleBlocks.length ) );
+			), visibleBlocks.length ), 'assertive' );
 		} else {
-			this.debouncedSpeak( __( 'No results.' ) );
+			debouncedSpeak( __( 'No results.' ), 'assertive' );
 		}
 	}
 
@@ -70,10 +72,6 @@ class InserterMenu extends Component {
 		this.setState( {
 			filterValue: event.target.value,
 		} );
-	}
-
-	speakAssertive( message ) {
-		wp.a11y.speak( message, 'assertive' );
 	}
 
 	selectBlock( name ) {
