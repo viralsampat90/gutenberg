@@ -28,6 +28,7 @@ import {
 	clearSelectedBlock,
 	startTypingInBlock,
 	stopTypingInBlock,
+	replaceBlocks,
 } from '../../actions';
 import {
 	getPreviousBlock,
@@ -265,7 +266,7 @@ class VisualEditorBlock extends Component {
 			'is-hovered': isHovered,
 		} );
 
-		const { onMouseLeave, onFocus, onInsertAfter } = this.props;
+		const { onMouseLeave, onFocus, onInsertAfter, onReplace } = this.props;
 
 		// Determine whether the block has props to apply to the wrapper.
 		let wrapperProps;
@@ -320,6 +321,7 @@ class VisualEditorBlock extends Component {
 						attributes={ block.attributes }
 						setAttributes={ this.setAttributes }
 						insertBlockAfter={ onInsertAfter }
+						onReplace={ onReplace }
 						setFocus={ partial( onFocus, block.uid ) }
 						mergeBlocks={ this.mergeBlocks }
 						className={ className }
@@ -406,6 +408,10 @@ export default connect(
 
 		onMerge( ...args ) {
 			dispatch( mergeBlocks( ...args ) );
+		},
+
+		onReplace( blocks ) {
+			dispatch( replaceBlocks( [ ownProps.uid ], blocks ) );
 		},
 	} )
 )( VisualEditorBlock );

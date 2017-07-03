@@ -102,7 +102,26 @@ registerBlockType( 'core/list', {
 					} );
 				},
 			},
-
+			{
+				type: 'pattern',
+				regExp: /^[*-]\s/,
+				transform: ( { content } ) => {
+					return createBlock( 'core/list', {
+						nodeName: 'ul',
+						values: fromBrDelimitedContent( content ),
+					} );
+				},
+			},
+			{
+				type: 'pattern',
+				regExp: /^1[.)]\s/,
+				transform: ( { content } ) => {
+					return createBlock( 'core/list', {
+						nodeName: 'ol',
+						values: fromBrDelimitedContent( content ),
+					} );
+				},
+			},
 		],
 		to: [
 			{
