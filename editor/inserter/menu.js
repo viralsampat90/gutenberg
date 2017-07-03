@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { flow, groupBy, sortBy, findIndex, filter } from 'lodash';
+import { flow, groupBy, sortBy, findIndex, filter, find } from 'lodash';
 import { connect } from 'react-redux';
 
 /**
@@ -17,6 +17,7 @@ import { getCategories, getBlockTypes } from 'blocks';
  * Internal dependencies
  */
 import './style.scss';
+import { getBlocks } from '../selectors';
 import { showInsertionPoint, hideInsertionPoint } from '../actions';
 
 class InserterMenu extends Component {
@@ -34,6 +35,7 @@ class InserterMenu extends Component {
 		this.onKeyDown = this.onKeyDown.bind( this );
 		this.getVisibleBlocks = this.getVisibleBlocks.bind( this );
 		this.sortBlocksByCategory = this.sortBlocksByCategory.bind( this );
+		this.getVisibleBlocksForTab = this.getVisibleBlocksForTab.bind( this );
 	}
 
 	componentDidMount() {
@@ -46,6 +48,10 @@ class InserterMenu extends Component {
 
 	isShownBlock( block ) {
 		return block.title.toLowerCase().indexOf( this.state.filterValue.toLowerCase() ) !== -1;
+	}
+
+	isDisabledBlock( block ) {
+		return block.useOnce && find( this.props.blocks, ( { name } ) => block.name === name );
 	}
 
 	bindReferenceNode( nodeName ) {
@@ -92,25 +98,39 @@ class InserterMenu extends Component {
 		)( blockTypes );
 	}
 
-	findByIncrement( blockTypes, increment = 1 ) {
-		// Prepend a fake search block to the list to cycle through.
-		const list = [ { name: 'search' }, ...blockTypes ];
+	getVisibleBlocksForTab( blockTypes ) {
+		if ( this.state.tab === 'embeds' ) {
+			return blockTypes.filter( ( block ) => block.category === 'embed' );
+		}
 
-		const currentIndex = findIndex( list, ( blockType ) => this.state.currentFocus === blockType.name );
+		if ( this.state.tab === 'blocks' ) {
+			return blockTypes.filter( ( block ) => block.category !== 'embed' );
+		}
+
+		return blockTypes.filter( ( block ) => block.category === 'common' );
+	}
+
+	findByIncrement( blockTypes, increment = 1 ) {
+		const currentIndex = findIndex( blockTypes, ( blockType ) => this.state.currentFocus === blockType.name );
 		const nextIndex = currentIndex + increment;
-		const highestIndex = list.length - 1;
+		const highestIndex = blockTypes.length - 1;
 		const lowestIndex = 0;
 
 		if ( nextIndex > highestIndex ) {
-			return list[ lowestIndex ].name;
+			return 'search';
 		}
 
 		if ( nextIndex < lowestIndex ) {
-			return list[ highestIndex ].name;
+			return 'search';
 		}
 
 		// Return the name of the next block type.
-		return list[ nextIndex ].name;
+		const block = blockTypes[ nextIndex ];
+		if ( this.isDisabledBlock( block ) ) {
+			return this.findByIncrement( blockTypes, increment > 0 ? increment + 1 : increment - 1 );
+		}
+
+		return block.name;
 	}
 
 	findNext( blockTypes ) {
@@ -138,6 +158,7 @@ class InserterMenu extends Component {
 	focusNext() {
 		const sortedByCategory = flow(
 			this.getVisibleBlocks,
+			this.getVisibleBlocksForTab,
 			this.sortBlocksByCategory,
 		)( getBlockTypes() );
 
@@ -153,6 +174,7 @@ class InserterMenu extends Component {
 	focusPrevious() {
 		const sortedByCategory = flow(
 			this.getVisibleBlocks,
+			this.getVisibleBlocksForTab,
 			this.sortBlocksByCategory,
 		)( getBlockTypes() );
 
@@ -226,6 +248,7 @@ class InserterMenu extends Component {
 	}
 
 	getBlockItem( block ) {
+		const disabled = this.isDisabledBlock( block );
 		return (
 			<button
 				role="menuitem"
@@ -236,6 +259,7 @@ class InserterMenu extends Component {
 				tabIndex="-1"
 				onMouseEnter={ this.props.showInsertionPoint }
 				onMouseLeave={ this.props.hideInsertionPoint }
+				disabled={ disabled }
 			>
 				<Dashicon icon={ block.icon } />
 				{ block.title }
@@ -249,7 +273,7 @@ class InserterMenu extends Component {
 
 	render() {
 		const { position, instanceId } = this.props;
-		const visibleBlocksByCategory = this.getVisibleBlocksByCategory( getBlockTypes() );
+		const visibleBlocksByCategory = this.getVisibleBlocksByCategory( this.getVisibleBlocksForTab( getBlockTypes() ) );
 
 		/* eslint-disable jsx-a11y/no-autofocus */
 		return (
@@ -272,7 +296,7 @@ class InserterMenu extends Component {
 					{ this.state.tab === 'recent' &&
 						<div className="editor-inserter__recent">
 							{ getCategories()
-								.map( ( category ) => category.slug === 'common' && !! visibleBlocksByCategory[ category.slug ] && (
+								.map( ( category ) => !! visibleBlocksByCategory[ category.slug ] && (
 									<div
 										className="editor-inserter__category-blocks"
 										role="menu"
@@ -288,7 +312,7 @@ class InserterMenu extends Component {
 					}
 					{ this.state.tab === 'blocks' &&
 						getCategories()
-							.map( ( category ) => category.slug !== 'embed' && !! visibleBlocksByCategory[ category.slug ] && (
+							.map( ( category ) => !! visibleBlocksByCategory[ category.slug ] && (
 								<div key={ category.slug }>
 									<div
 										className="editor-inserter__separator"
@@ -310,7 +334,7 @@ class InserterMenu extends Component {
 					}
 					{ this.state.tab === 'embeds' &&
 						getCategories()
-							.map( ( category ) => category.slug === 'embed' && !! visibleBlocksByCategory[ category.slug ] && (
+							.map( ( category ) => !! visibleBlocksByCategory[ category.slug ] && (
 								<div
 									className="editor-inserter__category-blocks"
 									role="menu"
@@ -350,7 +374,11 @@ class InserterMenu extends Component {
 }
 
 const connectComponent = connect(
-	undefined,
+	( state ) => {
+		return {
+			blocks: getBlocks( state ),
+		};
+	},
 	{ showInsertionPoint, hideInsertionPoint }
 );
 
