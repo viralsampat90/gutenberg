@@ -18,3 +18,4 @@ export {
 	getBlockType,
 	getBlockTypes,
 } from './registration';
+export { getRecent, recordUsage } from './usage';
