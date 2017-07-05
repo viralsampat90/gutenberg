@@ -115,8 +115,8 @@ export function serializeBlock( block ) {
 	const saveContent = getSaveContent( blockType, block.attributes );
 	const saveAttributes = getCommentAttributes( block.attributes, parseBlockAttributes( saveContent, blockType ) );
 
-	if ( 'wp:core/more' === blockName ) {
-		return `<!-- more ${ saveAttributes.customText ? `${ saveAttributes.customText } ` : '' }-->${ saveAttributes.noTeaser ? '\n<!--noteaser-->' : '' }`;
+	if ( 'core/more' === blockName ) {
+		return `<!--more ${ saveAttributes.customText ? `${ saveAttributes.customText } ` : '' }-->${ saveAttributes.noTeaser ? '\n<!--noteaser-->' : '' }`;
 	}
 
 	const serializedAttributes = ! isEmpty( saveAttributes )
