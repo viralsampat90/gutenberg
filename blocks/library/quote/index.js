@@ -1,21 +1,24 @@
 /**
+ * External dependencies
+ */
+import { isString, isObject } from 'lodash';
+
+/**
  * WordPress dependencies
  */
 import { __, sprintf } from 'i18n';
-import { concatChildren } from 'element';
 import { Toolbar } from 'components';
-import { isObject } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import './style.scss';
+import './block.scss';
 import { registerBlockType, createBlock, query as hpq } from '../../api';
 import AlignmentToolbar from '../../alignment-toolbar';
 import BlockControls from '../../block-controls';
 import Editable from '../../editable';
 
-const { children, query } = hpq;
+const { children, node, query } = hpq;
 
 registerBlockType( 'core/quote', {
 	title: __( 'Quote' ),
@@ -23,8 +26,12 @@ registerBlockType( 'core/quote', {
 	category: 'common',
 
 	attributes: {
-		value: query( 'blockquote > p', children() ),
+		value: query( 'blockquote > p', node() ),
 		citation: children( 'footer' ),
+	},
+
+	defaultAttributes: {
+		value: [],
 	},
 
 	transforms: {
@@ -52,9 +59,28 @@ registerBlockType( 'core/quote', {
 			{
 				type: 'block',
 				blocks: [ 'core/text' ],
-				transform: ( { value, citation } ) => {
+				transform: ( { value, citation, ...attrs } ) => {
+					const textElement = value[ 0 ];
+					if ( ! textElement ) {
+						return createBlock( 'core/text', {
+							content: citation,
+						} );
+					}
+					const textContent = isString( textElement ) ? textElement : textElement.props.children;
+					if ( Array.isArray( value ) || citation ) {
+						const text = createBlock( 'core/text', {
+							content: textContent,
+						} );
+						const quote = createBlock( 'core/quote', {
+							...attrs,
+							citation,
+							value: Array.isArray( value ) ? value.slice( 1 ) : '',
+						} );
+
+						return [ text, quote ];
+					}
 					return createBlock( 'core/text', {
-						content: concatChildren( value, citation ),
+						content: textContent,
 					} );
 				},
 			},
@@ -63,9 +89,13 @@ registerBlockType( 'core/quote', {
 				blocks: [ 'core/heading' ],
 				transform: ( { value, citation, ...attrs } ) => {
 					const isMultiParagraph = Array.isArray( value ) && isObject( value[ 0 ] ) && value[ 0 ].type === 'p';
+					const headingElement = isMultiParagraph ? value[ 0 ] : value;
+					const headingContent = isObject( headingElement ) && value[ 0 ].type === 'p'
+						? headingElement.props.children
+						: headingElement;
 					if ( isMultiParagraph || citation ) {
 						const heading = createBlock( 'core/heading', {
-							content: Array.isArray( value ) ? value[ 0 ] : value,
+							content: headingContent,
 						} );
 						const quote = createBlock( 'core/quote', {
 							...attrs,
@@ -76,14 +106,14 @@ registerBlockType( 'core/quote', {
 						return [ heading, quote ];
 					}
 					return createBlock( 'core/heading', {
-						content: value,
+						content: headingContent,
 					} );
 				},
 			},
 		],
 	},
 
-	edit( { attributes, setAttributes, focus, setFocus, mergeBlocks } ) {
+	edit( { attributes, setAttributes, focus, setFocus, mergeBlocks, className } ) {
 		const { align, value, citation, style = 1 } = attributes;
 		const focusedEditable = focus ? focus.editable || 'value' : null;
 
@@ -109,7 +139,7 @@ registerBlockType( 'core/quote', {
 			),
 			<blockquote
 				key="quote"
-				className={ `blocks-quote blocks-quote-style-${ style }` }
+				className={ `${ className } blocks-quote-style-${ style }` }
 			>
 				<Editable
 					value={ value }
@@ -122,12 +152,13 @@ registerBlockType( 'core/quote', {
 					onFocus={ ( props ) => setFocus( { ...props, editable: 'value' } ) }
 					onMerge={ mergeBlocks }
 					style={ { textAlign: align } }
+					placeholder={ __( 'Write quote…' ) }
 				/>
 				{ ( ( citation && citation.length > 0 ) || !! focus ) && (
 					<Editable
 						tagName="footer"
 						value={ citation }
-						placeholder={ __( '— Add citation…' ) }
+						placeholder={ __( 'Write citation…' ) }
 						onChange={
 							( nextCitation ) => setAttributes( {
 								citation: nextCitation,
@@ -152,7 +183,7 @@ registerBlockType( 'core/quote', {
 						key={ i }
 						style={ { textAlign: align ? align : null } }
 					>
-						{ paragraph }
+						{ isString( paragraph ) ? paragraph : paragraph.props.children }
 					</p>
 				) ) }
 				{ citation && citation.length > 0 && (

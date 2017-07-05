@@ -3,10 +3,10 @@
 	border: 1px solid $light-gray-500;
 	box-shadow: $shadow-popover;
 	background-color: $white;
+	display: inline-flex;
 }
 
-.editor-visual-editor__block-controls ul.components-toolbar,
-.block-editable__inline-toolbar ul.components-toolbar {
+ul.components-toolbar {
 	list-style-type: none;
 
 	&> li {
@@ -105,7 +105,7 @@
 		font-weight: bold;
 		position: relative;
 		top: -5px;
-		left: -12px;
+		left: -11px;
 	}
 }
 

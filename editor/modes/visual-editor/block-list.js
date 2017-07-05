@@ -10,12 +10,14 @@ import { throttle, reduce, noop } from 'lodash';
 import { __ } from 'i18n';
 import { Component } from 'element';
 import { serialize, getDefaultBlock, createBlock } from 'blocks';
+import { Dashicon } from 'components';
 import { ENTER } from 'utils/keycodes';
 
 /**
  * Internal dependencies
  */
 import VisualEditorBlock from './block';
+import Inserter from '../../inserter';
 import {
 	getBlockUids,
 	getBlockInsertionPoint,
@@ -81,7 +83,20 @@ class VisualEditorBlockList extends Component {
 	}
 
 	onPointerMove( { clientY } ) {
+		const BUFFER = 60;
+		const { multiSelectedBlocks } = this.props;
 		const y = clientY + window.pageYOffset;
+
+		// If there is no selection yet, make the use move at least BUFFER px
+		// away from the block with the pointer.
+		if (
+			! multiSelectedBlocks.length &&
+			y - this.startLowerBoundary < BUFFER &&
+			this.startUpperBoundary - y < BUFFER
+		) {
+			return;
+		}
+
 		const key = this.coordMapKeys.reduce( ( acc, topY ) => y > topY ? topY : acc );
 
 		this.onSelectionChange( this.coordMap[ key ] );
@@ -111,6 +126,7 @@ class VisualEditorBlockList extends Component {
 
 	onSelectionStart( uid ) {
 		const { pageYOffset } = window;
+		const boundaries = this.refs[ uid ].getBoundingClientRect();
 
 		// Create a Y coödinate map to unique block IDs.
 		this.coordMap = reduce( this.refs, ( acc, node, blockUid ) => ( {
@@ -120,6 +136,9 @@ class VisualEditorBlockList extends Component {
 		// Cache an array of the Y coödrinates for use in `onPointerMove`.
 		this.coordMapKeys = Object.keys( this.coordMap );
 		this.selectionAtStart = uid;
+
+		this.startUpperBoundary = pageYOffset + boundaries.top;
+		this.startLowerBoundary = pageYOffset + boundaries.bottom;
 
 		window.addEventListener( 'mousemove', this.onPointerMove );
 		window.addEventListener( 'touchmove', this.onPointerMove );
@@ -153,6 +172,8 @@ class VisualEditorBlockList extends Component {
 		delete this.coordMap;
 		delete this.coordMapKeys;
 		delete this.selectionAtStart;
+		delete this.startUpperBoundary;
+		delete this.startLowerBoundary;
 
 		window.removeEventListener( 'mousemove', this.onPointerMove );
 		window.removeEventListener( 'touchmove', this.onPointerMove );
@@ -172,8 +193,19 @@ class VisualEditorBlockList extends Component {
 		this.props.onInsertBlock( newBlock );
 	}
 
+	insertBlock( name ) {
+		const newBlock = createBlock( name );
+		this.props.onInsertBlock( newBlock );
+	}
+
 	render() {
-		const { blocks, showInsertionPoint, insertionPoint, multiSelectedBlockUids } = this.props;
+		const {
+			blocks,
+			showInsertionPoint,
+			insertionPoint,
+			multiSelectedBlockUids,
+		} = this.props;
+
 		const insertionPointIndex = blocks.indexOf( insertionPoint );
 		const blocksWithInsertionPoint = showInsertionPoint
 			? [
@@ -205,16 +237,34 @@ class VisualEditorBlockList extends Component {
 						/>
 					);
 				} ) }
-
-				<input
-					type="text"
-					readOnly
-					className="editor-visual-editor__placeholder"
-					value={ ! blocks.length ? __( 'Write your story.' ) : __( 'Write…' ) }
-					onFocus={ ! blocks.length ? this.appendDefaultBlock : noop }
-					onClick={ !! blocks.length ? this.appendDefaultBlock : noop }
-					onKeyDown={ !! blocks.length ? this.onPlaceholderKeyDown : noop }
-				/>
+				{ ! blocks.length &&
+					<input
+						type="text"
+						readOnly
+						className="editor-visual-editor__placeholder"
+						value={ __( 'Write your story' ) }
+						onFocus={ this.appendDefaultBlock }
+						onClick={ noop }
+						onKeyDown={ noop }
+					/>
+				}
+				<div className="editor-visual-editor__continue-writing">
+					<Inserter position="top right" />
+					<button
+						className="editor-inserter__block"
+						onClick={ () => this.insertBlock( 'core/text' ) }
+					>
+						<Dashicon icon="text" />
+						{ __( 'Text' ) }
+					</button>
+					<button
+						className="editor-inserter__block"
+						onClick={ () => this.insertBlock( 'core/image' ) }
+					>
+						<Dashicon icon="format-image" />
+						{ __( 'Image' ) }
+					</button>
+				</div>
 			</div>
 		);
 	}

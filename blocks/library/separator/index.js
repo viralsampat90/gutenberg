@@ -6,7 +6,7 @@ import { __ } from 'i18n';
 /**
  * Internal dependencies
  */
-import './style.scss';
+import './block.scss';
 import { registerBlockType } from '../../api';
 
 registerBlockType( 'core/separator', {
@@ -16,8 +16,8 @@ registerBlockType( 'core/separator', {
 
 	category: 'layout',
 
-	edit() {
-		return <hr className="blocks-separator" />;
+	edit( { className } ) {
+		return <hr className={ className } />;
 	},
 
 	save() {

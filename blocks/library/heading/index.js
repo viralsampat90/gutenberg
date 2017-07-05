@@ -1,13 +1,14 @@
 /**
  * External dependencies
  */
-import { isString, isObject } from 'lodash';
+import { isObject } from 'lodash';
 
 /**
  * WordPress dependencies
  */
 import { __, sprintf } from 'i18n';
 import { concatChildren } from 'element';
+import { Toolbar } from 'components';
 
 /**
  * Internal dependencies
@@ -16,6 +17,9 @@ import './style.scss';
 import { registerBlockType, createBlock, query } from '../../api';
 import Editable from '../../editable';
 import BlockControls from '../../block-controls';
+import InspectorControls from '../../inspector-controls';
+import AlignmentToolbar from '../../alignment-toolbar';
+import BlockDescription from '../../block-description';
 
 const { children, prop } = query;
 
@@ -41,9 +45,9 @@ registerBlockType( 'core/heading', {
 				transform: ( { content, ...attrs } ) => {
 					const isMultiParagraph = Array.isArray( content ) && isObject( content[ 0 ] ) && content[ 0 ].type === 'p';
 					if ( isMultiParagraph ) {
-						const headingContent = isString( content[ 0 ] )
-							? content[ 0 ]
-							: content[ 0 ].props.children;
+						const headingContent = isObject( content[ 0 ] ) && content[ 0 ].type === 'p'
+							? content[ 0 ].props.children
+							: content[ 0 ];
 						const heading = createBlock( 'core/heading', {
 							content: headingContent,
 						} );
@@ -86,14 +90,14 @@ registerBlockType( 'core/heading', {
 	},
 
 	edit( { attributes, setAttributes, focus, setFocus, mergeBlocks, insertBlockAfter } ) {
-		const { content, nodeName = 'H2' } = attributes;
+		const { align, content, nodeName = 'H2' } = attributes;
 
 		return [
 			focus && (
 				<BlockControls
 					key="controls"
 					controls={
-						'123456'.split( '' ).map( ( level ) => ( {
+						'234'.split( '' ).map( ( level ) => ( {
 							icon: 'heading',
 							title: sprintf( __( 'Heading %s' ), level ),
 							isActive: 'H' + level === nodeName,
@@ -102,6 +106,33 @@ registerBlockType( 'core/heading', {
 						} ) )
 					}
 				/>
+			),
+			focus && (
+				<InspectorControls key="inspector">
+					<BlockDescription>
+						<p>{ __( 'Search engines use the headings to index the structure and content of your web pages.' ) }</p>
+					</BlockDescription>
+					<h3>{ __( 'Heading Settings' ) }</h3>
+					<p>{ __( 'Size' ) }</p>
+					<Toolbar
+						controls={
+							'123456'.split( '' ).map( ( level ) => ( {
+								icon: 'heading',
+								title: sprintf( __( 'Heading %s' ), level ),
+								isActive: 'H' + level === nodeName,
+								onClick: () => setAttributes( { nodeName: 'H' + level } ),
+								subscript: level,
+							} ) )
+						}
+					/>
+					<p>{ __( 'Text Alignment' ) }</p>
+					<AlignmentToolbar
+						value={ align }
+						onChange={ ( nextAlign ) => {
+							setAttributes( { align: nextAlign } );
+						} }
+					/>
+				</InspectorControls>
 			),
 			<Editable
 				key="editable"
@@ -118,16 +149,18 @@ registerBlockType( 'core/heading', {
 						content: after,
 					} ) );
 				} }
+				style={ { textAlign: align } }
+				placeholder={ __( 'Write heading…' ) }
 			/>,
 		];
 	},
 
 	save( { attributes } ) {
-		const { nodeName = 'H2', content } = attributes;
+		const { align, nodeName = 'H2', content } = attributes;
 		const Tag = nodeName.toLowerCase();
 
 		return (
-			<Tag>
+			<Tag style={ { textAlign: align } } >
 				{ content }
 			</Tag>
 		);

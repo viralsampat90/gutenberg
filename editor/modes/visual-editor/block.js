@@ -11,8 +11,9 @@ import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
  * WordPress dependencies
  */
 import { Children, Component } from 'element';
-import { BACKSPACE, ESCAPE } from 'utils/keycodes';
-import { getBlockType } from 'blocks';
+import { BACKSPACE, ESCAPE, DELETE } from 'utils/keycodes';
+import { getBlockType, getBlockDefaultClassname } from 'blocks';
+import { __, sprintf } from 'i18n';
 
 /**
  * Internal dependencies
@@ -177,7 +178,7 @@ class VisualEditorBlock extends Component {
 		} = this.props;
 
 		// Remove block on backspace.
-		if ( BACKSPACE === keyCode ) {
+		if ( BACKSPACE === keyCode || DELETE === keyCode ) {
 			if ( target === this.node ) {
 				event.preventDefault();
 				onRemove( [ uid ] );
@@ -236,6 +237,9 @@ class VisualEditorBlock extends Component {
 	render() {
 		const { block, multiSelectedBlockUids } = this.props;
 		const blockType = getBlockType( block.name );
+		// translators: %s: Type of block (i.e. Text, Image etc)
+		const blockLabel = sprintf( __( 'Block: %s' ), blockType.title );
+		const { className = getBlockDefaultClassname( block.name ) } = blockType;
 		// The block as rendered in the editor is composed of general block UI
 		// (mover, toolbar, wrapper) and the display of the block content, which
 		// is referred to as <BlockEdit />.
@@ -255,7 +259,7 @@ class VisualEditorBlock extends Component {
 		// Generate the wrapper class names handling the different states of the block.
 		const { isHovered, isSelected, isMultiSelected, isFirstMultiSelected, isTyping, focus } = this.props;
 		const showUI = isSelected && ( ! isTyping || ! focus.collapsed );
-		const className = classnames( 'editor-visual-editor__block', {
+		const wrapperClassname = classnames( 'editor-visual-editor__block', {
 			'is-selected': showUI,
 			'is-multi-selected': isMultiSelected,
 			'is-hovered': isHovered,
@@ -279,9 +283,10 @@ class VisualEditorBlock extends Component {
 				onMouseMove={ this.maybeHover }
 				onMouseEnter={ this.maybeHover }
 				onMouseLeave={ onMouseLeave }
-				className={ className }
+				className={ wrapperClassname }
 				data-type={ block.name }
 				tabIndex="0"
+				aria-label={ blockLabel }
 				{ ...wrapperProps }
 			>
 				{ ( showUI || isHovered ) && <BlockMover uids={ [ block.uid ] } /> }
@@ -317,6 +322,7 @@ class VisualEditorBlock extends Component {
 						insertBlockAfter={ onInsertAfter }
 						setFocus={ partial( onFocus, block.uid ) }
 						mergeBlocks={ this.mergeBlocks }
+						className={ className }
 						id={ block.uid }
 					/>
 				</div>
