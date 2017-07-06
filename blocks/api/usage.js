@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import { without } from 'lodash';
+
+/**
  * Internal dependencies
  */
 import { getBlockType, getBlockTypes } from './registration';
@@ -19,6 +24,6 @@ export function getRecent() {
 export function recordUsage( blockType ) {
 	recentBlockNames = [
 		blockType.name,
-		...recentBlockNames.filter( name => name !== blockType.name ),
+		...without( recentBlockNames, blockType.name ),
 	].slice( 0, maxRecent );
 }
